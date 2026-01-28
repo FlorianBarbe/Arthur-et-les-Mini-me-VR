@@ -7,63 +7,88 @@ Project for the VR Hackathon.
 - Cheikhou
 - Florian
 
-## VR Setup
+## Quick Start 🚀
 
-### Requirements
-- Unity 6000.0.36f1
-- A compatible VR headset (Oculus Quest, HTC Vive, Valve Index, Windows Mixed Reality)
-- OpenXR runtime configured (SteamVR or Oculus App)
+1. **Clone the project**
+2. **Open with Unity Hub** → Select Unity **6000.0.36f1**
+3. **Connect your VR headset** (Quest Link, SteamVR, etc.)
+4. **Open** `Assets/Scenes/VRScene.unity`
+5. **Press Play** → VR should work immediately!
 
-### Project Configuration
+## VR Requirements
 
-The project is configured with:
-- **XR Plug-in Management** (4.4.1)
-- **OpenXR Plugin** (1.12.0) - Works with all major VR headsets
-- **XR Interaction Toolkit** (3.0.4) - For VR interactions
+- **Unity 6000.0.36f1** (exact version required)
+- **VR Headset**: Oculus Quest (via Link/AirLink), HTC Vive, Valve Index, WMR
+- **VR Runtime**: Oculus App or SteamVR running in background
 
-### Getting Started
+## What's Included
 
-1. Open Unity Hub
-2. Add this project folder
-3. Ensure Unity Version: **6000.0.36f1** is selected
-4. Open the project
+### Packages (auto-installed)
+- XR Plug-in Management 4.5.3
+- OpenXR Plugin 1.16.0
+- XR Interaction Toolkit 3.3.0
+- Oculus XR Plugin 4.5.2
 
-### First Launch
+### Scene Content
+When you launch VRScene, you get:
+- 🎮 **XR Rig** with head & controller tracking
+- 🏢 **Room** with 4 walls
+- 🟥 **Floating cubes** (animated)
+- 🏛️ **Pillars** at corners
+- 🔵 **Glowing spheres**
+- 🪑 **Table**
+- 💡 **Atmospheric lighting**
 
-1. **Connect your VR headset** and ensure it's recognized by your system
-2. Open `Assets/Scenes/VRScene.unity`
-3. Press **Play** to test in VR
-
-### VR Controls
-
-| Controller | Action | Description |
-|------------|--------|-------------|
-| Left Joystick | Move | Smooth locomotion |
-| Left Grip | Sprint | Hold to move faster |
-| Right Joystick | Turn | Snap turn left/right |
-| Triggers | Interact | Grab objects |
-
-### Troubleshooting
-
-**VR not starting:**
-- Make sure OpenXR runtime is set (SteamVR or Oculus)
-- Check that your headset is connected and recognized
-- Verify XR is enabled: Edit → Project Settings → XR Plug-in Management → PC Settings → OpenXR
-
-**Performance issues:**
-- Target 72-90 FPS for comfortable VR
-- Reduce Quality settings if needed
-- Consider using Single Pass Instanced rendering
-
-### Scripts
-
+### VR Scripts
 | Script | Description |
 |--------|-------------|
+| `XRSetup.cs` | Creates XR Rig + decor at runtime (main script) |
 | `VRInitializer.cs` | Manages XR system startup |
 | `HandPresence.cs` | Controller tracking & haptics |
 | `VRLocomotion.cs` | Movement & snap turn |
 
-### XR Settings Location
-- XR Configuration: `Assets/XR/`
-- VR Scene: `Assets/Scenes/VRScene.unity`
-- VR Scripts: `Assets/Scripts/VR/`
+## Troubleshooting
+
+### VR doesn't start
+1. Ensure **Oculus App** or **SteamVR** is running
+2. Check headset is connected and recognized
+3. In Unity: Edit → Project Settings → XR Plug-in Management → PC
+   - ✅ OpenXR should be checked
+   - ❌ Mock Runtime should be **unchecked** in OpenXR settings
+
+### Head/controllers not tracking
+- Make sure OpenXR runtime is active (SteamVR or Oculus)
+- Check Console for error messages
+- Restart Unity and VR software
+
+### Performance issues
+- Target 72-90 FPS for comfortable VR
+- Reduce Quality settings if needed
+- Use Single Pass Instanced rendering
+
+## Project Structure
+
+```
+Assets/
+├── Scenes/
+│   └── VRScene.unity      # Main VR scene
+├── Scripts/
+│   └── VR/
+│       ├── XRSetup.cs     # Auto-setup XR + decor
+│       ├── VRInitializer.cs
+│       ├── HandPresence.cs
+│       └── VRLocomotion.cs
+└── XR/
+    ├── Settings/          # OpenXR configuration
+    └── Loaders/           # XR loaders
+```
+
+## OpenXR Configuration (already set)
+
+The project is pre-configured with:
+- ✅ Oculus Touch Controller Profile enabled
+- ✅ Mock Runtime disabled
+- ✅ Foveated Rendering enabled
+- ✅ Runtime Debugger enabled
+
+**No manual configuration needed** when cloning!
