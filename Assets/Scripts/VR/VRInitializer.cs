@@ -1,6 +1,8 @@
 using UnityEngine;
+using UnityEngine.XR;
 using UnityEngine.XR.Management;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace HackathonVR
 {
@@ -135,6 +137,24 @@ namespace HackathonVR
             StopVR();
         }
         
+        /// <summary>
+        /// Get the current display refresh rate from the XR display subsystem
+        /// </summary>
+        private float GetRefreshRate()
+        {
+            List<XRDisplaySubsystem> displaySubsystems = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetSubsystems(displaySubsystems);
+            
+            if (displaySubsystems.Count > 0 && displaySubsystems[0].running)
+            {
+                if (displaySubsystems[0].TryGetDisplayRefreshRate(out float refreshRate))
+                {
+                    return refreshRate;
+                }
+            }
+            return 0f;
+        }
+        
         private void OnGUI()
         {
             if (!showDebugInfo) return;
@@ -153,7 +173,8 @@ namespace HackathonVR
                 GUILayout.Label("Loader: None");
             }
             
-            GUILayout.Label($"Refresh Rate: {XRDevice.refreshRate:F0} Hz");
+            float refreshRate = GetRefreshRate();
+            GUILayout.Label($"Refresh Rate: {(refreshRate > 0 ? $"{refreshRate:F0} Hz" : "N/A")}");
             
             GUILayout.EndVertical();
             GUILayout.EndArea();

@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!114 &1
+--- !u!114 &-5693589367171441568
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -9,15 +9,28 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a6e36cd2e8ef48e4c9e0a86d82051dd8, type: 3}
-  m_Name: XRGeneralSettingsPerBuildTarget
+  m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
+  m_Name: Standalone Settings
   m_EditorClassIdentifier: 
-  Keys:
-  - 1
-  - 19
-  Values:
-  - {fileID: 11400000}
-  - {fileID: 11400000}
+  m_LoaderManagerInstance: {fileID: -2806569445738036068}
+  m_InitManagerOnStart: 1
+--- !u!114 &-2806569445738036068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4c3631f5e58749a59194e0cf6baf6d5, type: 3}
+  m_Name: Standalone Providers
+  m_EditorClassIdentifier: 
+  m_RequiresSettingsUpdate: 0
+  m_AutomaticLoading: 0
+  m_AutomaticRunning: 0
+  m_Loaders:
+  - {fileID: 11400000, guid: 56d43d0c0f3f2b34da9cc43028a2ac7c, type: 2}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27,13 +40,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7a83113e31ce5e4f98e5d50f2c6f836, type: 3}
-  m_Name: Standalone Settings
+  m_Script: {fileID: 11500000, guid: d2dc886499c26824283350fa532d087d, type: 3}
+  m_Name: XRGeneralSettingsPerBuildTarget
   m_EditorClassIdentifier: 
-  m_LoaderManagerInstance: {fileID: 11400002}
-  m_InitManagerOnStart: 1
-  m_ProviderInitsOnStart: 1
---- !u!114 &11400002
+  Keys: 010000000e000000
+  Values:
+  - {fileID: -5693589367171441568}
+  - {fileID: 4848233502832889038}
+--- !u!114 &2594351371599648423
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -42,13 +56,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1aee9fe73c3ec0b40bfcdb9fe4c80e24, type: 3}
-  m_Name: Standalone Providers
+  m_Script: {fileID: 11500000, guid: f4c3631f5e58749a59194e0cf6baf6d5, type: 3}
+  m_Name: Metro Providers
   m_EditorClassIdentifier: 
   m_RequiresSettingsUpdate: 0
-  m_Loaders:
-  - {fileID: 11400004}
---- !u!114 &11400004
+  m_AutomaticLoading: 0
+  m_AutomaticRunning: 0
+  m_Loaders: []
+--- !u!114 &4848233502832889038
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -57,6 +72,8 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7a613f4b9b35f7e41975e9279cbf2c20, type: 3}
-  m_Name: Open XR Loader
+  m_Script: {fileID: 11500000, guid: d236b7d11115f2143951f1e14045df39, type: 3}
+  m_Name: Metro Settings
   m_EditorClassIdentifier: 
+  m_LoaderManagerInstance: {fileID: 2594351371599648423}
+  m_InitManagerOnStart: 1
