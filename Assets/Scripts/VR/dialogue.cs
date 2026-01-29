@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR;
 using TMPro;
 
 public class SimpleDialogue : MonoBehaviour
@@ -10,40 +11,91 @@ public class SimpleDialogue : MonoBehaviour
     [TextArea(2, 4)]
     public List<string> lines = new List<string>();
 
-    public KeyCode nextKey = KeyCode.E;
+    public UnityEngine.Events.UnityEvent onFinished;
+    public GameObject objectToActivateOnFinish;
+
+    public KeyCode nextKey = KeyCode.E; // Keep E as backup
+    
+    // VR Input
+    private InputDevice rightController;
+    private bool wasPressed = false;
 
     int index = -1;
     bool isOpen = false;
 
-    void Start() => Close();
+    void Start() 
+    {
+        // Auto-start dialogue
+        Open();
+        NextLine();
+    }
 
     void Update()
     {
-        if (!Input.GetKeyDown(nextKey)) return;
-
-        if (!isOpen)
+        // 1. Keyboard Input
+        if (Input.GetKeyDown(nextKey)) 
         {
-            Open();
             NextLine();
+            return;
         }
-        else
+        
+        // 2. VR Input (Right Controller 'A' Button)
+        if (!rightController.isValid)
         {
-            NextLine();
+            InitializeController();
+        }
+
+        if (rightController.isValid)
+        {
+            // PrimaryButton is usually 'A' on Oculus Touch right controller
+            if (rightController.TryGetFeatureValue(CommonUsages.primaryButton, out bool isPressed))
+            {
+                // Trigger on button down (rising edge)
+                if (isPressed && !wasPressed)
+                {
+                    if (!isOpen)
+                    {
+                        Open();
+                        NextLine();
+                    }
+                    else
+                    {
+                        NextLine();
+                    }
+                }
+                wasPressed = isPressed;
+            }
+        }
+    }
+
+    void InitializeController()
+    {
+        var devices = new List<InputDevice>();
+        // Find Right Controller
+        InputDevices.GetDevicesWithCharacteristics(
+            InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller, 
+            devices);
+            
+        if (devices.Count > 0)
+        {
+            rightController = devices[0];
         }
     }
 
     void Open()
     {
         isOpen = true;
-        bubbleRoot.SetActive(true);
+        if(bubbleRoot != null) bubbleRoot.SetActive(true);
     }
 
     void Close()
     {
         isOpen = false;
-        bubbleRoot.SetActive(false);
-        bubbleText.text = "";
+        if(bubbleRoot != null) bubbleRoot.SetActive(false);
+        if(bubbleText != null) bubbleText.text = "";
         index = -1;
+        onFinished?.Invoke();
+        if (objectToActivateOnFinish != null) objectToActivateOnFinish.SetActive(true);
     }
 
     void NextLine()
@@ -53,6 +105,6 @@ public class SimpleDialogue : MonoBehaviour
         index++;
         if (index >= lines.Count) { Close(); return; }
 
-        bubbleText.text = lines[index];
+        if(bubbleText != null) bubbleText.text = lines[index];
     }
 }

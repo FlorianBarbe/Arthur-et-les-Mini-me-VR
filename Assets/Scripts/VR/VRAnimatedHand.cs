@@ -72,6 +72,18 @@ namespace HackathonVR
         private static readonly int TriggerHash = Animator.StringToHash("Trigger");
         private static readonly int ThumbHash = Animator.StringToHash("Thumb");
         
+        private bool isInitialized = false;
+        
+        /// <summary>
+        /// Initialize the hand with the correct side. Call this before Start().
+        /// </summary>
+        public void Initialize(HandSide side)
+        {
+            handSide = side;
+            isInitialized = true;
+            Debug.Log($"[VRAnimatedHand] Initialized as {side} hand");
+        }
+        
         private void Start()
         {
             TryFindController();

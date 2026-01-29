@@ -28,7 +28,7 @@ namespace HackathonVR
             SetupXR();
         }
         
-        private void SetupXR()
+        public void SetupXR()
         {
             // FORCE DISABLE EXTRA CONTENT (Fix User Request: No Table/Floor/Decor)
             createFloor = false;
@@ -84,6 +84,9 @@ namespace HackathonVR
             
             // Create Right Controller  
             var rightController = CreateController("Right Controller", cameraOffset.transform, false);
+            
+            // Add locomotion
+            xrOrigin.AddComponent<VRLocomotion>();
             
             Debug.Log("[XRSetup] XR Origin created successfully!");
             
@@ -161,19 +164,41 @@ namespace HackathonVR
             if (enableGrabInteraction)
             {
                 var grabber = controller.AddComponent<VRGrabber>();
-                Debug.Log($"[XRSetup] Added VRGrabber to {name}");
-            }
-            
-            // Add VRTeleporter to right controller only
-            if (!isLeft && enableGrabInteraction)
-            {
-                var teleporter = controller.AddComponent<VRTeleporter>();
-                Debug.Log($"[XRSetup] Added VRTeleporter to {name}");
+                // Configure hand type via reflection
+                var handTypeField = typeof(VRGrabber).GetField("handType", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (handTypeField != null)
+                {
+                    handTypeField.SetValue(grabber, isLeft ? VRGrabber.HandType.Left : VRGrabber.HandType.Right);
+                }
+                Debug.Log($"[XRSetup] Added VRGrabber to {name} ({(isLeft ? "Left" : "Right")})");
             }
             
             // Add animated hand
             var animatedHand = controller.AddComponent<VRAnimatedHand>();
-            Debug.Log($"[XRSetup] Added VRAnimatedHand to {name}");
+            animatedHand.Initialize(isLeft ? VRAnimatedHand.HandSide.Left : VRAnimatedHand.HandSide.Right);
+            Debug.Log($"[XRSetup] Added VRAnimatedHand to {name} ({(isLeft ? "Left" : "Right")})");
+
+            // Add Flashlight to LEFT controller
+            if (isLeft)
+            {
+                GameObject flashlightGO = new GameObject("Flashlight");
+                flashlightGO.transform.SetParent(controller.transform);
+                flashlightGO.transform.localPosition = Vector3.zero;
+                flashlightGO.transform.localRotation = Quaternion.identity;
+
+                Light spotlight = flashlightGO.AddComponent<Light>();
+                spotlight.type = LightType.Spot;
+                spotlight.range = 25f;
+                spotlight.spotAngle = 35f;
+                spotlight.intensity = 3f;
+                spotlight.color = new Color(1f, 1f, 0.9f); // Warm white
+                spotlight.shadows = LightShadows.Soft;
+                spotlight.enabled = false;
+                
+                flashlightGO.AddComponent<FlashlightController>();
+                
+                Debug.Log("[XRSetup] Added Flashlight to LEFT Controller");
+            }
             
             // Create controller visual
             var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);

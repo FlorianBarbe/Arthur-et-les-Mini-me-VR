@@ -1,204 +1,183 @@
 using UnityEngine;
 using UnityEngine.XR;
-using UnityEngine.XR.Interaction.Toolkit;
+using System.Collections.Generic;
 
 namespace HackathonVR
 {
     /// <summary>
-    /// Provides smooth locomotion and snap turn functionality for VR.
-    /// Attach to the XR Origin to enable movement.
+    /// VR Locomotion System:
+    /// - RIGHT Joystick: Smooth movement (forward/back/strafe left/right)
+    /// - LEFT Joystick: Teleport with visual indicator + snap turn
+    /// - Both Grips: Skip to next scene (debug)
     /// </summary>
     public class VRLocomotion : MonoBehaviour
     {
-        [Header("Movement Settings")]
-        [SerializeField] private float moveSpeed = 3f;
-        [SerializeField] private float sprintMultiplier = 2f;
-        [SerializeField] private bool useHeadDirection = true;
-        
-        [Header("Turn Settings")]
-        [SerializeField] private bool enableSnapTurn = true;
-        [SerializeField] private float snapTurnAngle = 45f;
-        [SerializeField] private float snapTurnCooldown = 0.3f;
-        
-        [Header("References")]
-        [SerializeField] private Transform headTransform;
-        [SerializeField] private CharacterController characterController;
-        
-        [Header("Input")]
-        [SerializeField] private InputDeviceCharacteristics leftHandCharacteristics = 
-            InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller;
-        [SerializeField] private InputDeviceCharacteristics rightHandCharacteristics = 
-            InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller;
-        
+        [Header("Smooth Movement (Right Joystick)")]
+        public float moveSpeed = 2f;
+        public float strafeSpeed = 1.5f;
+
+        [Header("Teleport (Left Joystick)")]
+        public float teleportRange = 10f;
+        public float teleportChargeTime = 0.5f;
+        public Color teleportIndicatorColor = Color.cyan;
+
+        [Header("Snap Turn (Left Joystick Left/Right)")]
+        public float snapTurnAngle = 45f;
+        public float snapTurnCooldown = 0.3f;
+
+        [Header("Debug")]
+        public float debugSkipHoldTime = 2f;
+
+        // Controllers
         private InputDevice leftController;
         private InputDevice rightController;
-        private float lastSnapTurnTime;
         private bool controllersFound = false;
-        
-        // Gravity
-        private float gravity = -9.81f;
-        private float verticalVelocity = 0f;
-        
+
+        // Teleport state
+        private GameObject teleportIndicator;
+        private float teleportChargeProgress = 0f;
+        private Vector3 teleportTarget;
+
+        // Cooldowns
+        private float lastSnapTurnTime = 0f;
+        private float debugGripHeldTime = 0f;
+        private bool debugSkipped = false;
+
+        private Transform vrRig;
+        private Camera vrCamera;
+
         private void Start()
         {
-            // Try to find character controller if not assigned
-            if (characterController == null)
-            {
-                characterController = GetComponent<CharacterController>();
-                if (characterController == null)
-                {
-                    characterController = gameObject.AddComponent<CharacterController>();
-                    characterController.height = 1.8f;
-                    characterController.center = new Vector3(0, 0.9f, 0);
-                    characterController.radius = 0.3f;
-                }
-            }
-            
-            // Find head transform if not assigned
-            if (headTransform == null)
-            {
-                var camera = GetComponentInChildren<Camera>();
-                if (camera != null)
-                {
-                    headTransform = camera.transform;
-                }
-            }
-            
-            TryFindControllers();
+            CreateTeleportIndicator();
         }
-        
-        private void TryFindControllers()
-        {
-            var leftDevices = new System.Collections.Generic.List<InputDevice>();
-            var rightDevices = new System.Collections.Generic.List<InputDevice>();
-            
-            InputDevices.GetDevicesWithCharacteristics(leftHandCharacteristics, leftDevices);
-            InputDevices.GetDevicesWithCharacteristics(rightHandCharacteristics, rightDevices);
-            
-            if (leftDevices.Count > 0)
-            {
-                leftController = leftDevices[0];
-            }
-            
-            if (rightDevices.Count > 0)
-            {
-                rightController = rightDevices[0];
-            }
-            
-            controllersFound = leftController.isValid && rightController.isValid;
-        }
-        
+
         private void Update()
         {
             if (!controllersFound)
             {
                 TryFindControllers();
+                FindVRRig();
             }
-            
-            HandleMovement();
-            HandleRotation();
-            ApplyGravity();
-        }
-        
-        private void HandleMovement()
-        {
-            if (!leftController.isValid) return;
-            
-            // Get thumbstick input from left controller
-            if (leftController.TryGetFeatureValue(CommonUsages.primary2DAxis, out Vector2 inputAxis))
+
+            if (controllersFound && vrRig != null)
             {
-                if (inputAxis.magnitude > 0.1f)
-                {
-                    // Calculate movement direction
-                    Vector3 moveDirection;
-                    
-                    if (useHeadDirection && headTransform != null)
-                    {
-                        // Use head forward direction (more intuitive)
-                        Vector3 forward = headTransform.forward;
-                        Vector3 right = headTransform.right;
-                        
-                        // Project onto horizontal plane
-                        forward.y = 0;
-                        right.y = 0;
-                        forward.Normalize();
-                        right.Normalize();
-                        
-                        moveDirection = (forward * inputAxis.y + right * inputAxis.x);
-                    }
-                    else
-                    {
-                        // Use XR Origin forward direction
-                        moveDirection = (transform.forward * inputAxis.y + transform.right * inputAxis.x);
-                    }
-                    
-                    // Check for sprint (grip button)
-                    float speedMultiplier = 1f;
-                    if (leftController.TryGetFeatureValue(CommonUsages.gripButton, out bool gripPressed) && gripPressed)
-                    {
-                        speedMultiplier = sprintMultiplier;
-                    }
-                    
-                    // Apply movement
-                    Vector3 movement = moveDirection * moveSpeed * speedMultiplier * Time.deltaTime;
-                    characterController.Move(movement);
-                }
+                HandleSmoothMovement();  // Right joystick
+                // HandleTeleport();     // DISABLED - Left joystick (up)
+                HandleSnapTurn();        // Left joystick (left/right)
+                HandleDebugSceneSkip();
             }
         }
-        
-        private void HandleRotation()
+
+        private void TryFindControllers()
         {
-            if (!enableSnapTurn || !rightController.isValid) return;
-            
-            // Get thumbstick input from right controller
-            if (rightController.TryGetFeatureValue(CommonUsages.primary2DAxis, out Vector2 inputAxis))
+            List<InputDevice> leftDevices = new List<InputDevice>();
+            List<InputDevice> rightDevices = new List<InputDevice>();
+
+            InputDevices.GetDevicesWithCharacteristics(
+                InputDeviceCharacteristics.Left | InputDeviceCharacteristics.Controller,
+                leftDevices);
+            InputDevices.GetDevicesWithCharacteristics(
+                InputDeviceCharacteristics.Right | InputDeviceCharacteristics.Controller,
+                rightDevices);
+
+            if (leftDevices.Count > 0 && rightDevices.Count > 0)
             {
-                // Check cooldown
-                if (Time.time - lastSnapTurnTime < snapTurnCooldown) return;
+                leftController = leftDevices[0];
+                rightController = rightDevices[0];
+                controllersFound = true;
+                Debug.Log("[VRLocomotion] Controllers found!");
+            }
+        }
+
+        private void FindVRRig()
+        {
+            GameObject rig = GameObject.Find("XR Origin (XR Rig)");
+            if (rig == null) rig = GameObject.Find("VR Setup");
+            if (rig != null) vrRig = rig.transform;
+
+            vrCamera = Camera.main;
+        }
+
+        // ==========================================
+        // SMOOTH MOVEMENT (Left Joystick)
+        // ==========================================
+        private void HandleSmoothMovement()
+        {
+            Vector2 joystickInput = Vector2.zero;
+            leftController.TryGetFeatureValue(CommonUsages.primary2DAxis, out joystickInput);
+
+            if (joystickInput.magnitude > 0.1f)
+            {
+                // Get camera forward/right for movement direction
+                Vector3 forward = vrCamera.transform.forward;
+                Vector3 right = vrCamera.transform.right;
+                forward.y = 0;
+                right.y = 0;
+                forward.Normalize();
+                right.Normalize();
+
+                // Calculate movement
+                Vector3 movement = (forward * joystickInput.y * moveSpeed) + 
+                                   (right * joystickInput.x * strafeSpeed);
                 
-                // Snap turn threshold
-                if (Mathf.Abs(inputAxis.x) > 0.7f)
-                {
-                    float turnDirection = Mathf.Sign(inputAxis.x);
-                    transform.Rotate(0, snapTurnAngle * turnDirection, 0);
-                    lastSnapTurnTime = Time.time;
-                }
+                vrRig.position += movement * Time.deltaTime;
             }
         }
-        
-        private void ApplyGravity()
+
+        // ==========================================
+        // SNAP TURN (Right Joystick Left/Right)
+        // ==========================================
+        private void HandleSnapTurn()
         {
-            if (characterController == null) return;
-            
-            if (characterController.isGrounded)
+            if (Time.time - lastSnapTurnTime < snapTurnCooldown) return;
+
+            Vector2 joystickInput = Vector2.zero;
+            rightController.TryGetFeatureValue(CommonUsages.primary2DAxis, out joystickInput);
+
+            // Snap turn
+            if (joystickInput.x < -0.7f && Mathf.Abs(joystickInput.y) < 0.5f)
             {
-                verticalVelocity = -0.5f; // Small downward force to keep grounded
+                vrRig.Rotate(0, -snapTurnAngle, 0);
+                lastSnapTurnTime = Time.time;
+            }
+            else if (joystickInput.x > 0.7f && Mathf.Abs(joystickInput.y) < 0.5f)
+            {
+                vrRig.Rotate(0, snapTurnAngle, 0);
+                lastSnapTurnTime = Time.time;
+            }
+        }
+
+        // ==========================================
+        // DEBUG SCENE SKIP (Both Grips)
+        // ==========================================
+        private void HandleDebugSceneSkip()
+        {
+            bool leftGrip = false;
+            bool rightGrip = false;
+
+            leftController.TryGetFeatureValue(CommonUsages.gripButton, out leftGrip);
+            rightController.TryGetFeatureValue(CommonUsages.gripButton, out rightGrip);
+
+            if (leftGrip && rightGrip)
+            {
+                debugGripHeldTime += Time.deltaTime;
+
+                if (debugGripHeldTime >= debugSkipHoldTime && !debugSkipped)
+                {
+                    debugSkipped = true;
+                    var gm = Core.GameManager.Instance;
+                    if (gm != null)
+                    {
+                        Debug.Log("[VRLocomotion] DEBUG: Skipping to next scene!");
+                        gm.LoadNextScene();
+                    }
+                }
             }
             else
             {
-                verticalVelocity += gravity * Time.deltaTime;
+                debugGripHeldTime = 0f;
+                debugSkipped = false;
             }
-            
-            characterController.Move(new Vector3(0, verticalVelocity * Time.deltaTime, 0));
-        }
-        
-        /// <summary>
-        /// Teleport the player to a specific position
-        /// </summary>
-        public void TeleportTo(Vector3 position)
-        {
-            // Disable character controller temporarily for teleport
-            characterController.enabled = false;
-            transform.position = position;
-            characterController.enabled = true;
-        }
-        
-        /// <summary>
-        /// Set movement speed at runtime
-        /// </summary>
-        public void SetMoveSpeed(float speed)
-        {
-            moveSpeed = speed;
         }
     }
 }
