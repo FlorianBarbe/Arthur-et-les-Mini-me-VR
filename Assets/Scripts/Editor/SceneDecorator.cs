@@ -1,10 +1,72 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine.SceneManagement;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 public class SceneDecorator : EditorWindow
 {
+    [MenuItem("Hackathon/Setup All Story Scenes (1-4)")]
+    public static void SetupAllScenes()
+    {
+        string[] sceneConfigs = { "1", "2", "3", "4" };
+        bool confirm = EditorUtility.DisplayDialog("Setup All Scenes", 
+            "This will open setup scenes 1, 2, 3, and 4 sequentially, apply VR setup, make objects interactive, and SAVE them. \n\nMake sure to save your current work first!", "Go!", "Cancel");
+        
+        if (!confirm) return;
+
+        foreach (string sceneName in sceneConfigs)
+        {
+            string path = $"Assets/Scenes/{sceneName}.unity";
+            if (!File.Exists(path))
+            {
+                Debug.LogError($"Scene not found: {path}");
+                continue;
+            }
+
+            Debug.Log($"Processing Scene {sceneName}...");
+            EditorSceneManager.OpenScene(path);
+            
+            // 1. Setup VR 
+            SetupVR();
+            
+            // 2. Make Interactive
+            MakeInteractive();
+            
+            // 3. Save
+            EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
+        }
+        
+        // Add to Build Settings enable
+        AddScenesToBuildSettings(sceneConfigs);
+        
+        Debug.Log("All story scenes (1-4) have been setup for VR!");
+    }
+
+    private static void AddScenesToBuildSettings(string[] sceneNames)
+    {
+        var existing = EditorBuildSettings.scenes.ToList();
+        bool changed = false;
+        
+        foreach (var name in sceneNames)
+        {
+            string path = $"Assets/Scenes/{name}.unity";
+            if (!existing.Any(s => s.path == path))
+            {
+                existing.Add(new EditorBuildSettingsScene(path, true));
+                changed = true;
+                Debug.Log($"Added {name} to Build Settings.");
+            }
+        }
+        
+        if (changed)
+        {
+            EditorBuildSettings.scenes = existing.ToArray();
+        }
+    }
+
     [MenuItem("Hackathon/Setup VR in Current Scene")]
     public static void SetupVR()
     {
