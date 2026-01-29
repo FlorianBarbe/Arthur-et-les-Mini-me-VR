@@ -134,44 +134,97 @@ namespace HackathonVR.Editor
 
         private static void SpawnBook()
         {
-            if (GameObject.Find("NarrativeBook") != null) return;
+            // 1. Ensure Story Manager exists
+            var storyMgrGO = GameObject.Find("StoryManager");
+            if (storyMgrGO == null)
+            {
+                storyMgrGO = new GameObject("StoryManager");
+                storyMgrGO.AddComponent<StoryManager>();
+            }
+            var storyManager = storyMgrGO.GetComponent<StoryManager>();
+
+            // 2. Spawn Book (Real Prefab)
+            GameObject book = GameObject.Find("NarrativeBook");
+            if (book == null)
+            {
+                // Try load prefab
+                var bookPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Books/Prefabs/book_0001a.prefab");
+                if (bookPrefab != null)
+                {
+                    book = PrefabUtility.InstantiatePrefab(bookPrefab) as GameObject;
+                }
+                else
+                {
+                    book = GameObject.CreatePrimitive(PrimitiveType.Cube); // Fallback
+                    book.transform.localScale = new Vector3(0.3f, 0.05f, 0.4f);
+                    var rend = book.GetComponent<Renderer>();
+                    if (rend != null) rend.material.color = new Color(0.6f, 0.1f, 0.1f);
+                }
+                book.name = "NarrativeBook";
+            }
             
-            // Create Book visual (Red flattened cube)
-            GameObject book = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            book.name = "NarrativeBook";
-            book.transform.position = new Vector3(4.1f, 0.05f, 1.0f); // In front of user (User is at 4.1, 0.1, 0.25)
-            book.transform.localScale = new Vector3(0.3f, 0.05f, 0.4f);
-            
-            var rend = book.GetComponent<Renderer>();
-            if (rend != null) rend.material.color = new Color(0.6f, 0.1f, 0.1f); // Red cover
-            
-            // Physics
-            var rb = book.AddComponent<Rigidbody>();
+            // Initial Position (Between Player and Narjisse - Approx)
+            book.transform.position = new Vector3(3.5f, 1.0f, 1.0f); // Floats in air
+            book.transform.rotation = Quaternion.Euler(60, 0, 0); // Angled for reading
+
+            // Add Components
+            var rb = book.GetComponent<Rigidbody>();
+            if (rb == null) rb = book.AddComponent<Rigidbody>();
             rb.mass = 1f;
+
+             // Add Interactable if missing
+            if (book.GetComponent<HackathonVR.Interactions.VRGrabInteractable>() == null)
+                book.AddComponent<HackathonVR.Interactions.VRGrabInteractable>();
+
+            // Add Book Logic
+            var bookLogic = book.GetComponent<BookLogic>();
+            if (bookLogic == null) bookLogic = book.AddComponent<BookLogic>();
             
-            // Logic
-            if (System.Type.GetType("HackathonVR.Interactions.VRGrabInteractable") != null)
+            // WIRE: Book -> StoryManager
+            // We use UnityEvent.AddListener at runtime or safely here? 
+            // Better to do it via script wiring if possible or verified.
+            // Since UnityEvents don't serialize well via script on non-prefab instances without care, 
+            // let's assign the book reference to StoryManager if we update StoryManager to have one.
+            // Or simpler: StoryManager observes the book?
+            // Let's stick to wiring:
+            UnityEditor.Events.UnityEventTools.AddPersistentListener(bookLogic.onBookClosed, storyManager.OnBookFinished);
+
+
+            // 3. Spawn Telescope
+            GameObject telescope = GameObject.Find("Telescope");
+            if (telescope == null)
             {
-                var grab = book.AddComponent<HackathonVR.Interactions.VRGrabInteractable>();
-                // Configure highlight
+                var telePrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/EmaceArt/it's 80's_FREE/Prefabs/Youth bedroom/Toys/EAThe80_Prop_Telescope_01a_PRE.prefab");
+                 if (telePrefab != null)
+                {
+                    telescope = PrefabUtility.InstantiatePrefab(telePrefab) as GameObject;
+                }
+                else
+                {
+                    telescope = GameObject.CreatePrimitive(PrimitiveType.Cylinder); // Fallback
+                    telescope.transform.localScale = new Vector3(0.1f, 1f, 0.1f);
+                }
+                telescope.name = "Telescope";
             }
+            // Position near where Narjisse would stand
+            telescope.transform.position = new Vector3(2.0f, 0.0f, 2.0f); 
+            telescope.transform.LookAt(new Vector3(100, 100, 100)); // Look at sky
+
+            // 4. Update StoryManager References
+            storyManager.narjisseObject = GameObject.Find("Narjisse"); // Assume exists
+            // Find Narjisse dialogue if possible
+            if (storyManager.narjisseObject != null)
+                 storyManager.narjisseDialogue = storyManager.narjisseObject.GetComponent<SimpleDialogue>();
             
-            if (System.Type.GetType("HackathonVR.Gameplay.BookLogic") != null)
-            {
-                book.AddComponent<BookLogic>();
-            }
+            storyManager.telescopeLookPoint = telescope.transform; // Look at telescope base/tube
             
-            // Wire to Dialogue
+            // 5. Wire Dialogue -> Book
             var dialogue = FindFirstObjectByType<SimpleDialogue>();
             if (dialogue != null)
             {
                 dialogue.objectToActivateOnFinish = book;
-                book.SetActive(false); // Hide until dialogue ends
-                Debug.Log("[SceneDecorator] Wired Book to Dialogue end event.");
-            }
-            else
-            {
-                Debug.LogWarning("[SceneDecorator] Could not find SimpleDialogue to wire Book event!");
+                book.SetActive(false); 
+                Debug.Log("[SceneDecorator] Wired and Configured Narrative Items.");
             }
         }
 

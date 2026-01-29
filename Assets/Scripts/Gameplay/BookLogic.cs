@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using HackathonVR.Interactions;
+using UnityEngine.Events;
 
 namespace HackathonVR.Gameplay
 {
@@ -9,15 +10,24 @@ namespace HackathonVR.Gameplay
         [TextArea(3, 5)]
         public string loreText = "Mon grand-père adorait la légende du télescope. Il disait qu'on pouvait voir la Terre sous un autre œil avec. Cela fait 1 an qu'il a disparu après être allé regarder dedans comme d'habitude...";
         
+        public UnityEvent onBookClosed;
+
         private VRGrabInteractable interactable;
         private GameObject tooltipObj;
         private GameObject lorePanelObj;
+        private bool isReading = false;
         
+        // Floating animation
+        private Vector3 startPos;
+        private float floatSpeed = 1f;
+        private float floatAmplitude = 0.1f;
+
         private void Start()
         {
             interactable = GetComponent<VRGrabInteractable>();
+            startPos = transform.position;
             
-            // Create Tooltip "Attraper (A)"
+            // Create Tooltip "Lire (A)"
             CreateTooltip();
             
             // Create Lore Panel (Hidden by default)
@@ -32,23 +42,46 @@ namespace HackathonVR.Gameplay
                 interactable.OnReleased.AddListener(OnReleased);
             }
         }
+
+        private void Update()
+        {
+            // Floating Animation (only when not held)
+            if (interactable != null && !interactable.IsGrabbed)
+            {
+                float newY = startPos.y + Mathf.Sin(Time.time * floatSpeed) * floatAmplitude;
+                transform.position = new Vector3(transform.position.x, newY, transform.position.z);
+            }
+
+            // Face camera for tooltip
+            if (tooltipObj != null && tooltipObj.activeSelf)
+            {
+                tooltipObj.transform.LookAt(Camera.main.transform);
+                tooltipObj.transform.Rotate(0, 180, 0); // Fix mirrored
+            }
+            
+            // Read Input (A Button)
+            if (isReading)
+            {
+                // If user presses A again (or B/X/Y generic close interaction), close book
+                // For simplicity, we can close it if they release/drop it, OR use input.
+                // Let's rely on Drop/Release to close for now, or add a 'Close' button in UI.
+            }
+        }
         
         private void CreateTooltip()
         {
-            tooltipObj = new GameObject("Tooltip_Attraper");
+            tooltipObj = new GameObject("Tooltip_Lire");
             tooltipObj.transform.SetParent(transform);
-            tooltipObj.transform.localPosition = new Vector3(0, 0.2f, 0); // Above book
-            tooltipObj.transform.localScale = Vector3.one * 0.15f; // reduced scale was 0.05
+            tooltipObj.transform.localPosition = new Vector3(0, 0.2f, 0); 
+            tooltipObj.transform.localScale = Vector3.one * 0.15f; 
             
             var canvas = tooltipObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var rt = canvas.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(250, 50); // enhanced
+            rt.sizeDelta = new Vector2(250, 50); 
             
             var txt = tooltipObj.AddComponent<TextMeshProUGUI>();
-            txt.text = "Attraper (A)"; // Changed from Gâchette to A to match request? actually grabbing is usually Grip/Trigger. 
-            // VRGrabber uses Grip/Trigger. The user prompt said: "y a ecrit attraper (A) à coter"
-            // So I write "Attraper (A)".
+            txt.text = "Lire (A)"; 
             txt.fontSize = 24;
             txt.alignment = TextAlignmentOptions.Center;
             txt.color = Color.white;
@@ -60,20 +93,20 @@ namespace HackathonVR.Gameplay
         {
             lorePanelObj = new GameObject("LorePanel");
             lorePanelObj.transform.SetParent(transform);
-            lorePanelObj.transform.localPosition = new Vector3(0, 0.2f, 0); // Above book when held
-            lorePanelObj.transform.localRotation = Quaternion.Euler(-30, 0, 0); // Tilted up
+            lorePanelObj.transform.localPosition = new Vector3(0, 0.3f, 0.1f); 
+            lorePanelObj.transform.localRotation = Quaternion.Euler(-30, 0, 0); 
             lorePanelObj.transform.localScale = Vector3.one * 0.2f;
             
             var canvas = lorePanelObj.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.WorldSpace;
             var rt = canvas.GetComponent<RectTransform>();
-            rt.sizeDelta = new Vector2(400, 300);
+            rt.sizeDelta = new Vector2(500, 300);
             
             // Background
             var bgObj = new GameObject("BG");
             bgObj.transform.SetParent(lorePanelObj.transform, false);
             var bgImg = bgObj.AddComponent<UnityEngine.UI.Image>();
-            bgImg.color = new Color(0, 0, 0, 0.8f);
+            bgImg.color = new Color(0, 0, 0, 0.9f);
             bgObj.GetComponent<RectTransform>().anchorMin = Vector2.zero;
             bgObj.GetComponent<RectTransform>().anchorMax = Vector2.one;
             
@@ -82,7 +115,7 @@ namespace HackathonVR.Gameplay
             txtObj.transform.SetParent(lorePanelObj.transform, false);
             var txt = txtObj.AddComponent<TextMeshProUGUI>();
             txt.text = loreText;
-            txt.fontSize = 20;
+            txt.fontSize = 24;
             txt.color = Color.white;
             txt.alignment = TextAlignmentOptions.Center;
             txt.enableWordWrapping = true;
@@ -90,8 +123,8 @@ namespace HackathonVR.Gameplay
             var txtRt = txtObj.GetComponent<RectTransform>();
             txtRt.anchorMin = Vector2.zero;
             txtRt.anchorMax = Vector2.one;
-            txtRt.offsetMin = new Vector2(10, 10);
-            txtRt.offsetMax = new Vector2(-10, -10);
+            txtRt.offsetMin = new Vector2(20, 20);
+            txtRt.offsetMax = new Vector2(-20, -20);
             
             lorePanelObj.SetActive(false);
         }
@@ -110,23 +143,22 @@ namespace HackathonVR.Gameplay
         
         private void OnGrabbed()
         {
+            // When grabbed, show story
             if (tooltipObj != null) tooltipObj.SetActive(false);
             if (lorePanelObj != null) lorePanelObj.SetActive(true);
+            isReading = true;
         }
         
         private void OnReleased()
         {
-            if (lorePanelObj != null) lorePanelObj.SetActive(false);
-        }
-        
-        private void Update()
-        {
-            // Face camera for tooltip
-            if (tooltipObj != null && tooltipObj.activeSelf)
+            // When released, hide story and trigger event
+            if (lorePanelObj != null && lorePanelObj.activeSelf)
             {
-                tooltipObj.transform.LookAt(Camera.main.transform);
-                tooltipObj.transform.Rotate(0, 180, 0); // Fix mirrored
+                lorePanelObj.SetActive(false);
+                onBookClosed?.Invoke();
+                Debug.Log("[BookLogic] Book closed/released - Triggering next event.");
             }
+            isReading = false;
         }
     }
 }
