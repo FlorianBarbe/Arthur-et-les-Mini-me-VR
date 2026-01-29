@@ -10,19 +10,24 @@ public class SceneDecorator : EditorWindow
     {
         Debug.Log("Setting up VR...");
         
-        // 1. Remove default camera
-        Camera mainCam = Camera.main;
-        if (mainCam != null && mainCam.transform.root.name != "XR Origin (XR Rig)")
+        // 1. Remove ALL existing cameras to ensure VR view
+        Camera[] cameras = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
+        foreach (var cam in cameras)
         {
-            DestroyImmediate(mainCam.gameObject);
+            if (cam.transform.root.name != "XR Origin (XR Rig)" && cam.transform.root.name != "VR Setup")
+            {
+                Debug.Log($"Removing existing camera: {cam.name}");
+                DestroyImmediate(cam.gameObject);
+            }
         }
         
         // 2. Add XRSetup if missing
         if (Object.FindFirstObjectByType<HackathonVR.XRSetup>() == null)
         {
             GameObject setupGO = new GameObject("VR Setup");
+            setupGO.transform.position = new Vector3(-8.3f, 0f, 0f); // Position on walkway
             setupGO.AddComponent<HackathonVR.XRSetup>();
-            Debug.Log("Added XRSetup.");
+            Debug.Log("Added XRSetup on walkway.");
         }
         else
         {
@@ -38,6 +43,48 @@ public class SceneDecorator : EditorWindow
         }
         
         Debug.Log("VR Setup Complete! Press Play to initialize rig.");
+    }
+
+    [MenuItem("Hackathon/Make Existing Objects Grabbable")]
+    public static void MakeInteractive()
+    {
+        var renderers = Object.FindObjectsByType<MeshRenderer>(FindObjectsSortMode.None);
+        int count = 0;
+        
+        foreach (var rend in renderers)
+        {
+            GameObject go = rend.gameObject;
+            if (go.isStatic) continue; // Ignore static objects (walls, floor)
+            if (go.GetComponent<MonoBehaviour>() != null && go.name.Contains("XR")) continue; // Ignore VR rig parts
+            
+            // Check size (arbitrary threshold for "props")
+            Vector3 size = rend.bounds.size;
+            // < 1.5m implies it's likely a prop (shovel, ball, cone) not a building
+            if (size.magnitude < 1.5f) 
+            {
+                // Add Collider if missing
+                if (go.GetComponent<Collider>() == null)
+                {
+                    go.AddComponent<BoxCollider>();
+                }
+
+                // Add Rigidbody if missing
+                if (go.GetComponent<Rigidbody>() == null)
+                {
+                    var rb = go.AddComponent<Rigidbody>();
+                    rb.mass = 1f;
+                    rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                }
+                
+                // Add VRGrabInteractable if missing
+                if (go.GetComponent<HackathonVR.Interactions.VRGrabInteractable>() == null)
+                {
+                    go.AddComponent<HackathonVR.Interactions.VRGrabInteractable>();
+                    count++;
+                }
+            }
+        }
+        Debug.Log($"Made {count} existing objects grabbable! (Shovels, balls, etc.)");
     }
 
     [MenuItem("Hackathon/Decorate Scene")]
