@@ -47,6 +47,16 @@ When you launch VRScene, you get:
 | `HandPresence.cs` | Controller tracking & haptics |
 | `VRLocomotion.cs` | Movement & snap turn |
 
+### Interaction System (NEW!)
+| Script | Description |
+|--------|-------------|
+| `VRGrabInteractable.cs` | Makes objects grabbable with physics throwing |
+| `VRGrabber.cs` | Allows VR hands to grab objects |
+| `VRSocketInteractor.cs` | Zones where objects can be placed (puzzles!) |
+| `VRPointer.cs` | Laser pointer for distant interactions |
+| `VRButton.cs` | Pressable VR buttons with feedback |
+| `VRInteractionSetup.cs` | Auto-setup utility + test helpers |
+
 ## Troubleshooting
 
 ### VR doesn't start
