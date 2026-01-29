@@ -2230,7 +2230,7 @@ Transform:
   m_GameObject: {fileID: 486342315}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.6468, y: -0.00001, z: 4.8579}
+  m_LocalPosition: {x: 3.6468, y: -0.0001, z: 4.8579}
   m_LocalScale: {x: 4.0618, y: 4.0618, z: 4.0618}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -7075,7 +7075,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4714110321435424, guid: 90c9321a66ce29244b6165d7a3f4efb3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.42
+      value: 4.79
       objectReference: {fileID: 0}
     - target: {fileID: 4714110321435424, guid: 90c9321a66ce29244b6165d7a3f4efb3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7130,8 +7130,12 @@ PrefabInstance:
       value: -88.68
       objectReference: {fileID: 0}
     - target: {fileID: 7190280880599326724, guid: 90c9321a66ce29244b6165d7a3f4efb3, type: 3}
+      propertyPath: playAudio
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7190280880599326724, guid: 90c9321a66ce29244b6165d7a3f4efb3, type: 3}
       propertyPath: sequenceName
-      value: anim_narjisse.4ds
+      value: anim_narjisse_720.4ds
       objectReference: {fileID: 0}
     - target: {fileID: 7190280880599326724, guid: 90c9321a66ce29244b6165d7a3f4efb3, type: 3}
       propertyPath: dataInStreamingAssets
