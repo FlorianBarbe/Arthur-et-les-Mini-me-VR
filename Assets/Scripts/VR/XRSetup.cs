@@ -159,6 +159,17 @@ namespace HackathonVR
                 Debug.Log($"[XRSetup] Added VRGrabber to {name}");
             }
             
+            // Add VRTeleporter to right controller only
+            if (!isLeft && enableGrabInteraction)
+            {
+                var teleporter = controller.AddComponent<VRTeleporter>();
+                Debug.Log($"[XRSetup] Added VRTeleporter to {name}");
+            }
+            
+            // Add animated hand
+            var animatedHand = controller.AddComponent<VRAnimatedHand>();
+            Debug.Log($"[XRSetup] Added VRAnimatedHand to {name}");
+            
             // Create controller visual
             var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             visual.name = "Visual";

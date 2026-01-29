@@ -6,6 +6,7 @@ namespace HackathonVR.Interactions
 {
     /// <summary>
     /// Allows a VR controller/hand to grab VRGrabInteractable objects.
+    /// Supports both proximity grab and distance grab with laser pointer.
     /// Attach this to your controller GameObjects.
     /// </summary>
     public class VRGrabber : MonoBehaviour
@@ -15,6 +16,16 @@ namespace HackathonVR.Interactions
         [SerializeField] private Transform grabPoint;
         [SerializeField] private float grabRadius = 0.1f;
         [SerializeField] private LayerMask grabLayerMask = ~0;
+        
+        [Header("Distance Grab Settings")]
+        [SerializeField] private bool enableDistanceGrab = true;
+        [SerializeField] private float distanceGrabRange = 10f;
+        [SerializeField] private float distanceGrabActivation = 0.3f; // Trigger threshold to show laser
+        
+        [Header("Laser Pointer Settings")]
+        [SerializeField] private float laserWidth = 0.008f;
+        [SerializeField] private Color laserColor = new Color(0.3f, 0.8f, 1f, 0.8f);
+        [SerializeField] private Color laserHitColor = new Color(0.3f, 1f, 0.5f, 1f);
         
         [Header("Input Settings")]
         [SerializeField] private GrabInputType grabInput = GrabInputType.Grip;
@@ -41,8 +52,17 @@ namespace HackathonVR.Interactions
         private bool controllerFound = false;
         private VRGrabInteractable currentlyGrabbed;
         private VRGrabInteractable currentHoverTarget;
+        private VRGrabInteractable distanceHoverTarget;
         private bool isGrabbing = false;
         private float currentGrabValue = 0f;
+        private float currentTriggerValue = 0f;
+        private bool isShowingLaser = false;
+        
+        // Laser
+        private LineRenderer laserLine;
+        private Material laserMaterial;
+        private GameObject laserDot;
+        private Material laserDotMaterial;
         
         // Sphere overlap results buffer
         private Collider[] overlapResults = new Collider[10];
@@ -63,7 +83,34 @@ namespace HackathonVR.Interactions
                 grabPoint = grabPointObj.transform;
             }
             
+            SetupLaser();
             TryFindController();
+        }
+        
+        private void SetupLaser()
+        {
+            // Create laser line renderer
+            laserLine = gameObject.AddComponent<LineRenderer>();
+            laserLine.positionCount = 2;
+            laserLine.startWidth = laserWidth;
+            laserLine.endWidth = laserWidth * 0.5f;
+            laserLine.useWorldSpace = true;
+            
+            laserMaterial = new Material(Shader.Find("Unlit/Color"));
+            laserMaterial.color = laserColor;
+            laserLine.material = laserMaterial;
+            laserLine.enabled = false;
+            
+            // Create laser dot (hit point indicator)
+            laserDot = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            laserDot.name = "LaserDot";
+            laserDot.transform.localScale = Vector3.one * 0.03f;
+            Destroy(laserDot.GetComponent<Collider>());
+            
+            laserDotMaterial = new Material(Shader.Find("Unlit/Color"));
+            laserDotMaterial.color = laserHitColor;
+            laserDot.GetComponent<Renderer>().material = laserDotMaterial;
+            laserDot.SetActive(false);
         }
         
         private void TryFindController()
@@ -104,7 +151,14 @@ namespace HackathonVR.Interactions
             if (!isGrabbing)
             {
                 CheckForHoverTargets();
+                
+                if (enableDistanceGrab)
+                {
+                    UpdateDistanceGrab();
+                }
             }
+            
+            UpdateLaserVisual();
         }
         
         private void UpdateGrabInput()
@@ -114,6 +168,8 @@ namespace HackathonVR.Interactions
             
             controller.TryGetFeatureValue(CommonUsages.grip, out gripValue);
             controller.TryGetFeatureValue(CommonUsages.trigger, out triggerValue);
+            
+            currentTriggerValue = triggerValue;
             
             // Determine grab value based on input type
             switch (grabInput)
@@ -142,7 +198,7 @@ namespace HackathonVR.Interactions
         
         private void CheckForHoverTargets()
         {
-            // Find nearby grabbable objects
+            // Find nearby grabbable objects (proximity)
             int hitCount = Physics.OverlapSphereNonAlloc(
                 GrabPoint.position, 
                 grabRadius, 
@@ -188,8 +244,109 @@ namespace HackathonVR.Interactions
             }
         }
         
+        private void UpdateDistanceGrab()
+        {
+            // Laser is always visible when not grabbing something nearby
+            isShowingLaser = currentHoverTarget == null;
+            
+            if (!isShowingLaser)
+            {
+                // Clear distance hover target when not showing laser
+                if (distanceHoverTarget != null)
+                {
+                    distanceHoverTarget.OnHoverEnd(this);
+                    distanceHoverTarget = null;
+                }
+                return;
+            }
+            
+            // Raycast to find distant objects
+            Ray ray = new Ray(transform.position, transform.forward);
+            VRGrabInteractable hitGrabbable = null;
+            
+            if (Physics.Raycast(ray, out RaycastHit hit, distanceGrabRange, grabLayerMask))
+            {
+                hitGrabbable = hit.collider.GetComponentInParent<VRGrabInteractable>();
+            }
+            
+            // Update distance hover target
+            if (hitGrabbable != distanceHoverTarget)
+            {
+                // Exit old distance hover
+                if (distanceHoverTarget != null)
+                {
+                    distanceHoverTarget.OnHoverEnd(this);
+                }
+                
+                // Enter new distance hover
+                distanceHoverTarget = hitGrabbable;
+                
+                if (distanceHoverTarget != null && distanceHoverTarget.CanBeGrabbed)
+                {
+                    distanceHoverTarget.OnHoverStart(this);
+                    TriggerHaptic(0.15f, 0.05f); // Light haptic on target acquired
+                }
+            }
+        }
+        
+        private void UpdateLaserVisual()
+        {
+            if (!enableDistanceGrab || !isShowingLaser || isGrabbing)
+            {
+                laserLine.enabled = false;
+                laserDot.SetActive(false);
+                return;
+            }
+            
+            laserLine.enabled = true;
+            
+            Ray ray = new Ray(transform.position, transform.forward);
+            Vector3 endPoint = transform.position + transform.forward * distanceGrabRange;
+            bool hitSomething = false;
+            
+            if (Physics.Raycast(ray, out RaycastHit hit, distanceGrabRange, grabLayerMask))
+            {
+                endPoint = hit.point;
+                hitSomething = true;
+                
+                // Show dot at hit point
+                laserDot.SetActive(true);
+                laserDot.transform.position = hit.point + hit.normal * 0.01f;
+            }
+            else
+            {
+                laserDot.SetActive(false);
+            }
+            
+            // Update line positions
+            laserLine.SetPosition(0, transform.position);
+            laserLine.SetPosition(1, endPoint);
+            
+            // Update colors based on whether we're targeting a grabbable
+            Color currentColor = (distanceHoverTarget != null && distanceHoverTarget.CanBeGrabbed) 
+                ? laserHitColor 
+                : laserColor;
+            
+            laserMaterial.color = currentColor;
+            laserLine.startColor = currentColor;
+            laserLine.endColor = currentColor * 0.5f;
+            
+            if (hitSomething)
+            {
+                laserDotMaterial.color = currentColor;
+                
+                // Pulse effect on valid target
+                if (distanceHoverTarget != null)
+                {
+                    float pulse = 1f + Mathf.Sin(Time.time * 8f) * 0.3f;
+                    laserDot.transform.localScale = Vector3.one * 0.03f * pulse;
+                }
+            }
+        }
+        
         private void TryGrab()
         {
+            // Priority 1: Proximity grab
             if (currentHoverTarget != null && currentHoverTarget.CanBeGrabbed)
             {
                 currentlyGrabbed = currentHoverTarget;
@@ -201,7 +358,27 @@ namespace HackathonVR.Interactions
                 
                 if (debugMode)
                 {
-                    Debug.Log($"[VRGrabber] {handType} hand grabbed {currentlyGrabbed.gameObject.name}");
+                    Debug.Log($"[VRGrabber] {handType} hand grabbed {currentlyGrabbed.gameObject.name} (proximity)");
+                }
+                return;
+            }
+            
+            // Priority 2: Distance grab
+            if (enableDistanceGrab && distanceHoverTarget != null && distanceHoverTarget.CanBeGrabbed)
+            {
+                currentlyGrabbed = distanceHoverTarget;
+                distanceHoverTarget.OnHoverEnd(this);
+                distanceHoverTarget = null;
+                
+                currentlyGrabbed.OnGrab(this);
+                isGrabbing = true;
+                isShowingLaser = false;
+                
+                TriggerHaptic(0.4f, 0.1f); // Stronger haptic for distance grab
+                
+                if (debugMode)
+                {
+                    Debug.Log($"[VRGrabber] {handType} hand grabbed {currentlyGrabbed.gameObject.name} (distance)");
                 }
             }
         }
@@ -276,6 +453,13 @@ namespace HackathonVR.Interactions
             return Vector2.zero;
         }
         
+        private void OnDestroy()
+        {
+            if (laserMaterial != null) Destroy(laserMaterial);
+            if (laserDotMaterial != null) Destroy(laserDotMaterial);
+            if (laserDot != null) Destroy(laserDot);
+        }
+        
         private void OnDrawGizmos()
         {
             if (!showGrabPoint) return;
@@ -289,6 +473,13 @@ namespace HackathonVR.Interactions
             {
                 Gizmos.color = Color.yellow;
                 Gizmos.DrawLine(point.position, currentHoverTarget.transform.position);
+            }
+            
+            // Draw distance grab ray
+            if (enableDistanceGrab)
+            {
+                Gizmos.color = laserColor;
+                Gizmos.DrawRay(point.position, transform.forward * distanceGrabRange);
             }
         }
     }
