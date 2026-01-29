@@ -5,10 +5,48 @@ using System.Collections.Generic;
 
 public class SceneDecorator : EditorWindow
 {
+    [MenuItem("Hackathon/Setup VR in Current Scene")]
+    public static void SetupVR()
+    {
+        Debug.Log("Setting up VR...");
+        
+        // 1. Remove default camera
+        Camera mainCam = Camera.main;
+        if (mainCam != null && mainCam.transform.root.name != "XR Origin (XR Rig)")
+        {
+            DestroyImmediate(mainCam.gameObject);
+        }
+        
+        // 2. Add XRSetup if missing
+        if (Object.FindFirstObjectByType<HackathonVR.XRSetup>() == null)
+        {
+            GameObject setupGO = new GameObject("VR Setup");
+            setupGO.AddComponent<HackathonVR.XRSetup>();
+            Debug.Log("Added XRSetup.");
+        }
+        else
+        {
+            Debug.Log("XRSetup already present.");
+        }
+
+        // 3. Add Music Manager if missing
+        if (Object.FindFirstObjectByType<HackathonVR.MusicManager>() == null)
+        {
+            GameObject musicGO = new GameObject("Music Manager");
+            musicGO.AddComponent<HackathonVR.MusicManager>();
+            Debug.Log("Added Music Manager.");
+        }
+        
+        Debug.Log("VR Setup Complete! Press Play to initialize rig.");
+    }
+
     [MenuItem("Hackathon/Decorate Scene")]
     public static void Decorate()
     {
         Debug.Log("Starting scene decoration...");
+
+        // Ensure VR setup is done first just in case
+        SetupVR();
 
         // 1. Set Skybox
         SetSkybox();
