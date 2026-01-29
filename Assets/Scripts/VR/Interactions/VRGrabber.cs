@@ -26,6 +26,7 @@ namespace HackathonVR.Interactions
         [SerializeField] private float laserWidth = 0.008f;
         [SerializeField] private Color laserColor = new Color(0.3f, 0.8f, 1f, 0.8f);
         [SerializeField] private Color laserHitColor = new Color(0.3f, 1f, 0.5f, 1f);
+        [SerializeField] private Vector3 laserRotationOffset = new Vector3(60f, 0f, 0f); // Rotate to point forward like index finger
         
         [Header("Input Settings")]
         [SerializeField] private GrabInputType grabInput = GrabInputType.Grip;
@@ -71,6 +72,9 @@ namespace HackathonVR.Interactions
         public bool IsGrabbing => isGrabbing && currentlyGrabbed != null;
         public VRGrabInteractable GrabbedObject => currentlyGrabbed;
         public HandType Hand => handType;
+        
+        // Laser direction with rotation offset applied (points forward like index finger)
+        private Vector3 LaserDirection => Quaternion.Euler(laserRotationOffset) * transform.forward;
         
         private void Start()
         {
@@ -261,7 +265,7 @@ namespace HackathonVR.Interactions
             }
             
             // Raycast to find distant objects
-            Ray ray = new Ray(transform.position, transform.forward);
+            Ray ray = new Ray(transform.position, LaserDirection);
             VRGrabInteractable hitGrabbable = null;
             
             if (Physics.Raycast(ray, out RaycastHit hit, distanceGrabRange, grabLayerMask))
@@ -300,8 +304,8 @@ namespace HackathonVR.Interactions
             
             laserLine.enabled = true;
             
-            Ray ray = new Ray(transform.position, transform.forward);
-            Vector3 endPoint = transform.position + transform.forward * distanceGrabRange;
+            Ray ray = new Ray(transform.position, LaserDirection);
+            Vector3 endPoint = transform.position + LaserDirection * distanceGrabRange;
             bool hitSomething = false;
             
             if (Physics.Raycast(ray, out RaycastHit hit, distanceGrabRange, grabLayerMask))

@@ -19,6 +19,7 @@ namespace HackathonVR.Interactions
         [SerializeField] private int arcSegments = 30;
         [SerializeField] private LayerMask teleportLayerMask = ~0;
         [SerializeField] private float teleportActivationThreshold = 0.7f;
+        [SerializeField] private Vector3 aimRotationOffset = new Vector3(60f, 0f, 0f); // Rotate to point forward like index finger
         
         [Header("Visual Settings")]
         [SerializeField] private float lineWidth = 0.02f;
@@ -258,7 +259,8 @@ namespace HackathonVR.Interactions
         private void UpdateArc()
         {
             Vector3 startPos = transform.position;
-            Vector3 forward = transform.forward;
+            // Apply rotation offset to aim forward like pointing with index finger
+            Vector3 forward = Quaternion.Euler(aimRotationOffset) * transform.forward;
             
             // Calculate arc trajectory
             float stepLength = maxDistance / arcSegments;
