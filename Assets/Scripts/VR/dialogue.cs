@@ -14,6 +14,15 @@ public class SimpleDialogue : MonoBehaviour
     public UnityEngine.Events.UnityEvent onFinished;
     public GameObject objectToActivateOnFinish;
 
+    public void SetDialogue(List<string> newLines)
+    {
+        lines = new List<string>(newLines);
+        index = -1;
+        isOpen = false;
+        Open();
+        NextLine();
+    }
+
     public KeyCode nextKey = KeyCode.E; // Keep E as backup
     
     // VR Input

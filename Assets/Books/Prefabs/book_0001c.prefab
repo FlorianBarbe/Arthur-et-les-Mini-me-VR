@@ -11,6 +11,10 @@ GameObject:
   - component: {fileID: 400000}
   - component: {fileID: 3300000}
   - component: {fileID: 2300000}
+  - component: {fileID: 9007908062679699255}
+  - component: {fileID: 2676193169821439419}
+  - component: {fileID: 8069579337815769093}
+  - component: {fileID: 373859802772950994}
   m_Layer: 0
   m_Name: book_0001c
   m_TagString: Untagged
@@ -86,3 +90,130 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &9007908062679699255
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.051360495, y: 0.25652, z: 0.17424}
+  m_Center: {x: 0, y: 0.128, z: 0}
+--- !u!54 &2676193169821439419
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!114 &8069579337815769093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e8f34a7f08043f4aa2d21918333cd20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  grabType: 0
+  canBeGrabbed: 1
+  returnToOriginalPosition: 0
+  returnSpeed: 5
+  throwForceMultiplier: 1.5
+  throwAngularForceMultiplier: 1
+  useSnapPoint: 0
+  snapPositionOffset: {x: 0, y: 0, z: 0}
+  snapRotationOffset: {x: 0, y: 0, z: 0}
+  enableHapticOnGrab: 1
+  hapticAmplitude: 0.3
+  hapticDuration: 0.1
+  highlightOnHover: 1
+  highlightColor: {r: 1, g: 0.8, b: 0.2, a: 1}
+  highlightIntensity: 0.3
+  OnGrabbed:
+    m_PersistentCalls:
+      m_Calls: []
+  OnReleased:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHoverEnter:
+    m_PersistentCalls:
+      m_Calls: []
+  OnHoverExit:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &373859802772950994
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56c54eb3054a3684c84c2c4115064903, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  loreText: "Derni\xE8res notes de grand-p\xE8re, il y a exactement 1 an, le jour
+    de sa disparition, alors qu'il \xE9tait parti jeter un coup d'oeil dans son t\xE9lescope
+    : \"J'adorais la l\xE9gende du t\xE9lescope, c'\xE9tait toujours un plaisir de
+    r\xEAver \xE0 ce que je pourrais voir \xE0 travers. Le vieux Chaman me disait
+    toujours que les plus belles surprises se trouvaient l\xE0 o\xF9 on s'y attendait
+    le moins. En suivant sa logique je devrais prendre un t\xE9lescope pour regarder
+    le sol ... Ce ne sont que des dictons apr\xE8s tout. Ma foi pourquoi ne pas essayer
+    ahah!\""
+  pages: []
+  typewriteSpeed: 0.02
+  panelColor: {r: 0, g: 0, b: 0, a: 0.9}
+  pageFlipSound: {fileID: 0}
+  openParticle: {fileID: 0}
+  onBookClosed:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 11500000, guid: 84af904ee9dc8fe4a88a0100143f14fb, type: 3}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
