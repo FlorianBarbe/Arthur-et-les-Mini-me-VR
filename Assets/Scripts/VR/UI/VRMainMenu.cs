@@ -56,6 +56,36 @@ namespace HackathonVR.UI
             PlayBackgroundMusic();
         }
         
+        private void CreateTitle()
+        {
+            var titleObject = new GameObject("Title");
+            titleObject.transform.SetParent(menuParent.transform);
+            titleObject.transform.localPosition = new Vector3(0, 0.6f, 0);
+            
+            // Create 3D text using TextMesh
+            var textMesh = titleObject.AddComponent<TextMesh>();
+            textMesh.text = gameTitle;
+            textMesh.fontSize = 120;
+            textMesh.characterSize = 0.02f;
+            textMesh.anchor = TextAnchor.MiddleCenter;
+            textMesh.alignment = TextAlignment.Center;
+            textMesh.color = titleColor;
+            textMesh.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            
+            // Add glow effect with second text behind
+            var glowObj = new GameObject("TitleGlow");
+            glowObj.transform.SetParent(titleObject.transform);
+            glowObj.transform.localPosition = new Vector3(0, 0, 0.02f);
+            
+            var glowMesh = glowObj.AddComponent<TextMesh>();
+            glowMesh.text = gameTitle;
+            glowMesh.fontSize = 120;
+            glowMesh.characterSize = 0.02f;
+            glowMesh.anchor = TextAnchor.MiddleCenter;
+            glowMesh.alignment = TextAlignment.Center;
+            glowMesh.color = new Color(titleColor.r, titleColor.g, titleColor.b, 0.3f);
+        }
+        
         private void CreateButtons()
         {
             // Create flat play button

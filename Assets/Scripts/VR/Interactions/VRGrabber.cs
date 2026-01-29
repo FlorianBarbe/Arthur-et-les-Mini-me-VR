@@ -26,9 +26,9 @@ namespace HackathonVR.Interactions
         [SerializeField] private bool useTelekinesisMode = true; // Object floats along laser instead of sticking to hand
         [SerializeField] private float minGrabDistance = 0.3f;
         [SerializeField] private float maxGrabDistance = 8f;
-        [SerializeField] private float distanceChangeSpeed = 3f; // How fast thumbstick changes distance
-        [SerializeField] private float positionSmoothSpeed = 20f; // How fast object follows target position
-        [SerializeField] private float rotationSmoothSpeed = 15f; // How fast object rotates to follow wrist
+        [SerializeField] private float distanceChangeSpeed = 4f; // How fast thumbstick changes distance
+        [SerializeField] private float positionSmoothSpeed = 25f; // Faster position tracking
+        [SerializeField] private float rotationSmoothSpeed = 20f; // Faster rotation tracking
         
         [Header("Laser Pointer Settings")]
         [SerializeField] private float laserWidth = 0.008f;
@@ -205,10 +205,14 @@ namespace HackathonVR.Interactions
             
             // Rotate object to follow wrist rotation (with offset preserved)
             Quaternion targetRotation = transform.rotation * grabRotationOffset;
+            
+            // Use extremely high speed for almost instant rotation response, or use simple assignment if "snappy" feel is desired.
+            float rotationSpeed = rotationSmoothSpeed * 3f; // Boost rotation speed
+            
             currentlyGrabbed.transform.rotation = Quaternion.Slerp(
                 currentlyGrabbed.transform.rotation,
                 targetRotation,
-                rotationSmoothSpeed * Time.deltaTime
+                rotationSpeed * Time.deltaTime
             );
         }
         
@@ -342,7 +346,14 @@ namespace HackathonVR.Interactions
         
         private void UpdateLaserVisual()
         {
-            if (!enableDistanceGrab || !isShowingLaser || isGrabbing)
+            // Show laser if:
+            // 1. Distance grab is enabled AND laser is active (trigger pressed) AND NOT grabbing anything
+            // OR
+            // 2. We are grabbing something in telekinesis mode
+            bool shouldShow = (enableDistanceGrab && isShowingLaser && !isGrabbing) || 
+                              (useTelekinesisMode && isGrabbing && currentlyGrabbed != null);
+                              
+            if (!shouldShow)
             {
                 laserLine.enabled = false;
                 laserDot.SetActive(false);
