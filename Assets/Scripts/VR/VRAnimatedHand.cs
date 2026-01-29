@@ -20,6 +20,7 @@ namespace HackathonVR
         [SerializeField] private HandSide handSide = HandSide.Right;
         [SerializeField] private GameObject handModelPrefab;
         [SerializeField] private bool hideControllerVisual = true;
+        [SerializeField] private Vector3 proceduralRotationOffset = Vector3.zero; // Adjusted to align with wrist
         
         [Header("Animation Settings")]
         [SerializeField] private float fingerSpeed = 15f;
@@ -123,7 +124,7 @@ namespace HackathonVR
             // Rotate hand to correct orientation - palm down, fingers pointing forward
             // Left hand needs to be mirrored
             float mirror = handSide == HandSide.Left ? -1f : 1f;
-            spawnedHand.transform.localRotation = Quaternion.Euler(60f, 0f, 0f); // Tilt forward
+            spawnedHand.transform.localRotation = Quaternion.Euler(proceduralRotationOffset);
             
             // Palm - flat box
             var palm = GameObject.CreatePrimitive(PrimitiveType.Cube);

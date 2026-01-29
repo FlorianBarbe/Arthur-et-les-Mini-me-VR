@@ -432,9 +432,19 @@ namespace HackathonVR.Interactions
                 distanceHoverTarget.OnHoverEnd(this);
                 distanceHoverTarget = null;
                 
+                if (useTelekinesisMode)
+                {
+                    // Initialize grab distance to current object distance to prevent jumping
+                    currentGrabDistance = Vector3.Distance(transform.position, currentlyGrabbed.transform.position);
+                    currentGrabDistance = Mathf.Clamp(currentGrabDistance, minGrabDistance, maxGrabDistance);
+                    
+                    // Capture initial rotation offset
+                    grabRotationOffset = Quaternion.Inverse(transform.rotation) * currentlyGrabbed.transform.rotation;
+                }
+                
                 currentlyGrabbed.OnGrab(this);
                 isGrabbing = true;
-                isShowingLaser = false;
+                 isShowingLaser = false;
                 
                 TriggerHaptic(0.4f, 0.1f); // Stronger haptic for distance grab
                 
