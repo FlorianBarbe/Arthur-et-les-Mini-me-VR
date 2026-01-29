@@ -75,17 +75,18 @@ namespace HackathonVR.Interactions
         
         private void SetupLineRenderer()
         {
-            lineRenderer = gameObject.AddComponent<LineRenderer>();
-            lineRenderer.positionCount = arcSegments;
-            lineRenderer.startWidth = lineWidth;
-            lineRenderer.endWidth = lineWidth * 0.5f;
+            // Create a child object for the line renderer to avoid conflict with Grabber laser
+            GameObject lrObj = new GameObject("TeleportLaser");
+            lrObj.transform.SetParent(transform, false);
+            
+            lineRenderer = lrObj.AddComponent<LineRenderer>();
+            
+            lineRenderer.startWidth = 0.02f;
+            lineRenderer.endWidth = 0.02f;
+            lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            lineRenderer.material.color = validColor;
             lineRenderer.useWorldSpace = true;
-            
-            // Create glowing material
-            lineMaterial = new Material(Shader.Find("Unlit/Color"));
-            lineMaterial.color = validColor;
-            lineRenderer.material = lineMaterial;
-            
+            lineRenderer.positionCount = 0;
             lineRenderer.enabled = false;
         }
         
