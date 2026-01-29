@@ -3,6 +3,7 @@ using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 using Unity.XR.CoreUtils;
 using System.Collections.Generic;
+using HackathonVR.Interactions;
 
 namespace HackathonVR
 {
@@ -16,6 +17,8 @@ namespace HackathonVR
         [SerializeField] private bool createFloor = true;
         [SerializeField] private bool createInteractionManager = true;
         [SerializeField] private bool createDecor = true;
+        [SerializeField] private bool enableGrabInteraction = true;
+        [SerializeField] private bool createGrabbableTestObjects = true;
         
         private Camera vrCamera;
         private Transform cameraTransform;
@@ -91,6 +94,12 @@ namespace HackathonVR
                 CreateDecor();
             }
             
+            // Create grabbable test objects
+            if (createGrabbableTestObjects && enableGrabInteraction)
+            {
+                CreateGrabbableObjects();
+            }
+            
             // Destroy any old cameras that aren't ours
             foreach (var cam in FindObjectsByType<Camera>(FindObjectsSortMode.None))
             {
@@ -142,6 +151,13 @@ namespace HackathonVR
             
             var tracker = controller.AddComponent<ControllerTracker>();
             tracker.Initialize(characteristics, isLeft);
+            
+            // Add VRGrabber for interaction
+            if (enableGrabInteraction)
+            {
+                var grabber = controller.AddComponent<VRGrabber>();
+                Debug.Log($"[XRSetup] Added VRGrabber to {name}");
+            }
             
             // Create controller visual
             var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -237,6 +253,94 @@ namespace HackathonVR
             CreateLight(decorParent.transform, new Vector3(0, 4, 0), new Color(1f, 1f, 1f), 15f);
             
             Debug.Log("[XRSetup] Decor created");
+        }
+        
+        private void CreateGrabbableObjects()
+        {
+            var grabbablesParent = new GameObject("Grabbable Objects");
+            
+            // Create grabbable cubes on the table
+            CreateGrabbableCube(grabbablesParent.transform, new Vector3(-0.3f, 0.9f, 2f), 0.12f, new Color(1f, 0.3f, 0.3f), "RedCube");
+            CreateGrabbableCube(grabbablesParent.transform, new Vector3(0f, 0.9f, 2f), 0.1f, new Color(0.3f, 1f, 0.3f), "GreenCube");
+            CreateGrabbableCube(grabbablesParent.transform, new Vector3(0.3f, 0.9f, 2f), 0.11f, new Color(0.3f, 0.3f, 1f), "BlueCube");
+            
+            // Create grabbable spheres
+            CreateGrabbableSphere(grabbablesParent.transform, new Vector3(-0.5f, 0.95f, 2.3f), 0.07f, new Color(1f, 0.8f, 0f), "GoldBall");
+            CreateGrabbableSphere(grabbablesParent.transform, new Vector3(0.5f, 0.95f, 2.3f), 0.08f, new Color(0f, 0.8f, 0.8f), "CyanBall");
+            
+            // Create a grabbable cylinder
+            CreateGrabbableCylinder(grabbablesParent.transform, new Vector3(0f, 0.95f, 1.7f), 0.05f, 0.15f, new Color(0.8f, 0.2f, 0.8f), "PurpleCylinder");
+            
+            Debug.Log("[XRSetup] Grabbable test objects created on table");
+        }
+        
+        private void CreateGrabbableCube(Transform parent, Vector3 position, float size, Color color, string name)
+        {
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            cube.name = name;
+            cube.transform.SetParent(parent);
+            cube.transform.position = position;
+            cube.transform.localScale = Vector3.one * size;
+            
+            // Add rigidbody
+            var rb = cube.AddComponent<Rigidbody>();
+            rb.mass = 0.3f;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            
+            // Add grabbable component
+            cube.AddComponent<VRGrabInteractable>();
+            
+            // Set material
+            var renderer = cube.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = CreateEmissiveMaterial(color, 0.3f);
+            }
+        }
+        
+        private void CreateGrabbableSphere(Transform parent, Vector3 position, float radius, Color color, string name)
+        {
+            var sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            sphere.name = name;
+            sphere.transform.SetParent(parent);
+            sphere.transform.position = position;
+            sphere.transform.localScale = Vector3.one * radius * 2f;
+            
+            var rb = sphere.AddComponent<Rigidbody>();
+            rb.mass = 0.2f;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            
+            sphere.AddComponent<VRGrabInteractable>();
+            
+            var renderer = sphere.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = CreateEmissiveMaterial(color, 0.4f);
+            }
+        }
+        
+        private void CreateGrabbableCylinder(Transform parent, Vector3 position, float radius, float height, Color color, string name)
+        {
+            var cylinder = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            cylinder.name = name;
+            cylinder.transform.SetParent(parent);
+            cylinder.transform.position = position;
+            cylinder.transform.localScale = new Vector3(radius * 2f, height, radius * 2f);
+            
+            var rb = cylinder.AddComponent<Rigidbody>();
+            rb.mass = 0.25f;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+            
+            cylinder.AddComponent<VRGrabInteractable>();
+            
+            var renderer = cylinder.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.material = CreateEmissiveMaterial(color, 0.35f);
+            }
         }
         
         private void CreateWall(Transform parent, Vector3 position, Vector3 scale, Color color)
