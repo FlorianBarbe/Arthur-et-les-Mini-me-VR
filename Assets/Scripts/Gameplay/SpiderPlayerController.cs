@@ -138,9 +138,9 @@ public class SpiderPlayerController : MonoBehaviour
 
     private Vector3 ComputeTranslationDelta(Vector2 leftStick, float dt)
     {
-        // Inverted forward control as requested
+        // Inverted forward and strafe controls as requested
         float forward = -leftStick.y;
-        float strafe = leftStick.x;
+        float strafe = -leftStick.x;
 
         Vector3 forwardDir;
         Vector3 rightDir;
@@ -148,7 +148,7 @@ public class SpiderPlayerController : MonoBehaviour
         if (flatMovement)
         {
             Vector3 f = transform.forward; f.y = 0f;
-            Vector3 r = transform.right;   r.y = 0f;
+            Vector3 r = transform.right; r.y = 0f;
 
             forwardDir = f.sqrMagnitude > 0.0001f ? f.normalized : Vector3.forward;
             rightDir = r.sqrMagnitude > 0.0001f ? r.normalized : Vector3.right;
@@ -160,10 +160,9 @@ public class SpiderPlayerController : MonoBehaviour
         }
 
         Vector3 horizontal = (forwardDir * forward + rightDir * strafe) * moveSpeed * dt;
-        // Gravity is handled by Rigidbody usually, checking below
-
         return horizontal;
     }
+
 
     private void ApplySpiderMotion(Vector3 deltaPos, float deltaYawDeg)
     {
