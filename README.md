@@ -17,6 +17,8 @@ Le joueur doit naviguer dans l'environnement en utilisant différentes formes po
 ![Gameplay 1](doc/photo_1.png)
 ![Gameplay 2](doc/photo_2.png)
 ![Gameplay 3](doc/photo_4.png)
+![Bee Gameplay](doc/photo_6.png)
+![Spider Gameplay](doc/photo_5.png)
 
 ### Mécaniques de Jeu
 
@@ -30,14 +32,10 @@ Le joueur doit naviguer dans l'environnement en utilisant différentes formes po
 - **Interaction** : Collectez du pollen et atteignez des zones inaccessibles aux humains.
 - **Monture** : Chevauchez une abeille géante pour des déplacements rapides (BeeRideSystem).
 
-![Bee Gameplay](doc/photo_6.png)
-
 #### Forme Araignée (Spider)
 - **Déplacement** : Faufilez-vous au sol et dans les petits recoins (SpiderPlayerController).
 - **Grimpe** : Utilisez vos capacités d'araignée pour naviguer sur des surfaces complexes.
 - **Interaction Spécifique** : Interagissez avec l'environnement d'une manière unique à votre petite taille (SpiderInteraction).
-
-![Spider Gameplay](doc/photo_5.png)
 
 ## Installation & Démarrage
 
