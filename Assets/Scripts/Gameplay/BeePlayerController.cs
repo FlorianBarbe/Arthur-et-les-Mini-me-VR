@@ -3,10 +3,11 @@ using UnityEngine.XR;
 using System.Collections.Generic;
 
 /// <summary>
-/// Drone-style dual-stick controller for a Bee in VR.
-/// LEFT stick:  Y = forward/back, X = strafe
-/// RIGHT stick: X = yaw, Y = altitude up/down
-/// Also supports "riding" (bee attached to player rig) for the feeling of flying on its back.
+/// Drone-style controller for a Bee in VR.
+/// NEW SCHEME (as requested):
+/// LEFT stick:  X = continuous yaw (turn around Y), Y = altitude up/down
+/// RIGHT stick: Y = forward/back, X = strafe left/right
+/// Also supports "riding" (bee attached to player rig).
 /// Robust to controller disconnect/reconnect.
 /// </summary>
 public class BeePlayerController : MonoBehaviour
@@ -77,7 +78,6 @@ public class BeePlayerController : MonoBehaviour
 
     private void Update()
     {
-        // Reacquire controllers if needed
         if (!leftDevice.isValid || !rightDevice.isValid)
             TryInitializeDevices();
 
@@ -89,7 +89,7 @@ public class BeePlayerController : MonoBehaviour
         Vector2 leftAxis = ApplyDeadzoneRescale(leftAxisRaw, deadzone);
         Vector2 rightAxis = ApplyDeadzoneRescale(rightAxisRaw, deadzone);
 
-        // Optional smoothing
+        // Smoothing
         if (inputSmoothing > 0f)
         {
             float k = 1f - Mathf.Exp(-inputSmoothing * Time.deltaTime);
@@ -105,28 +105,29 @@ public class BeePlayerController : MonoBehaviour
         float dt = Time.deltaTime;
         if (dt <= 0f) return;
 
-        // Compute intended deltas
-        float yawInput = rightAxisSmoothed.x;
-        float verticalInput = rightAxisSmoothed.y;
+        // NEW INPUT MAPPING:
+        // Left stick:  X = yaw, Y = altitude
+        // Right stick: X = strafe, Y = forward/back
+        float yawInput = leftAxisSmoothed.x;
+        float altitudeInput = leftAxisSmoothed.y;
+
+        float forwardInput = rightAxisSmoothed.y;
+        float strafeInput = rightAxisSmoothed.x;
 
         float yawDeltaDeg = yawInput * turnSpeed * dt;
-        Vector3 translationDelta = ComputeTranslationDelta(leftAxisSmoothed, verticalInput, dt);
 
-        // Apply movement to bee (Rigidbody-safe)
+        Vector3 translationDelta = ComputeTranslationDelta(forwardInput, strafeInput, altitudeInput, dt);
+
         ApplyBeeMotion(translationDelta, yawDeltaDeg);
 
-        // Keep player riding the bee
         if (keepRiderAttached)
             AttachRiderToSeat();
     }
 
     // ---------------- Movement ----------------
 
-    private Vector3 ComputeTranslationDelta(Vector2 leftStick, float verticalInput, float dt)
+    private Vector3 ComputeTranslationDelta(float forwardInput, float strafeInput, float altitudeInput, float dt)
     {
-        float forward = leftStick.y;
-        float strafe = leftStick.x;
-
         Vector3 forwardDir;
         Vector3 rightDir;
 
@@ -144,30 +145,27 @@ public class BeePlayerController : MonoBehaviour
             rightDir = transform.right;
         }
 
-        Vector3 horizontal = (forwardDir * forward + rightDir * strafe) * moveSpeed * dt;
-        Vector3 vertical = Vector3.up * (verticalInput * verticalSpeed * dt);
+        Vector3 horizontal = (forwardDir * forwardInput + rightDir * strafeInput) * moveSpeed * dt;
+        Vector3 vertical = Vector3.up * (altitudeInput * verticalSpeed * dt);
 
         return horizontal + vertical;
     }
 
     private void ApplyBeeMotion(Vector3 deltaPos, float deltaYawDeg)
     {
-        // Clamp altitude if requested
         Vector3 targetPos = transform.position + deltaPos;
         if (clampAltitude)
             targetPos.y = Mathf.Clamp(targetPos.y, minY, maxY);
 
         Quaternion targetRot = transform.rotation * Quaternion.Euler(0f, deltaYawDeg, 0f);
 
-        if (rb != null && rb.isKinematic == false)
+        if (rb != null && !rb.isKinematic)
         {
-            // Physics-driven movement
             rb.MovePosition(targetPos);
             rb.MoveRotation(targetRot);
         }
         else
         {
-            // Transform-driven movement (for kinematic/no rigidbody)
             transform.position = targetPos;
             transform.rotation = targetRot;
         }
@@ -211,10 +209,8 @@ public class BeePlayerController : MonoBehaviour
             playerRigRoot.eulerAngles = rigEuler;
         }
 
-        // Apply Scale
         playerRigRoot.localScale = Vector3.one * playerScale;
     }
-
 
     // ---------------- XR Devices ----------------
 
@@ -247,7 +243,7 @@ public class BeePlayerController : MonoBehaviour
 
     private static InputDevice GetFirstDeviceAtNode(XRNode node)
     {
-        List<InputDevice> devices = new List<InputDevice>();
+        var devices = new List<InputDevice>();
         InputDevices.GetDevicesAtXRNode(node, devices);
         return devices.Count > 0 ? devices[0] : default;
     }
@@ -256,20 +252,16 @@ public class BeePlayerController : MonoBehaviour
 
     /// <summary>
     /// Reads stick from primary2DAxis, falls back to secondary2DAxis if needed.
-    /// This avoids the common "always zero" issue on some OpenXR bindings.
     /// </summary>
     private static Vector2 ReadStick(InputDevice device)
     {
         if (!device.isValid) return Vector2.zero;
 
-        // Try primary
         if (device.TryGetFeatureValue(CommonUsages.primary2DAxis, out Vector2 v))
         {
-            // If it's not zero, use it
             if (v.sqrMagnitude > 0.000001f) return v;
         }
 
-        // Fallback: secondary
         if (device.TryGetFeatureValue(CommonUsages.secondary2DAxis, out v))
             return v;
 
